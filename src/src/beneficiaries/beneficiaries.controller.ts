@@ -251,6 +251,40 @@ export class BeneficiariesController {
 		});
 	}
 
+	@Post(':id/verify-enrollment/:action')
+	@UseGuards(new AuthGuard())
+	async verifyEnrollment(
+		@Body() body:any,
+		@Res() response: any,
+		@Req() request: any,
+		@Param() params:any
+	) {
+		let result 
+		if(params.action =="Verified"){
+			const payload = {
+				user_id:params.id,
+				status:"enrolled_ip_verified"
+			}
+            result = await this.beneficiariesService.statusUpdate(
+			payload,
+			request,
+		);
+		}
+		else if(params.action =="Rejected"){
+			
+            result = await this.beneficiariesService.setEnrollmentStatusRejected(
+			params.id,
+			request.mw_userid,
+		);
+		}
+		
+		return response.status(result.status).json({
+			success: result.success,
+			message: result.message,
+			data: result.data,
+		});
+	}
+
 	@Post('/admin/export-csv')
 	@UseGuards(new AuthGuard())
 	async exportCsv(

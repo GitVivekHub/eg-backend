@@ -1397,6 +1397,51 @@ export class BeneficiariesService {
 		};
 	}
 
+	public async setEnrollmentStatusRejected(beneficiaryId:number,updatedBy:number) {
+		const { data: updatedUser } = await this.userById(beneficiaryId);
+		
+		const res = await this.hasuraService.update(
+			updatedUser?.program_beneficiaries?.id,
+			'program_beneficiaries',
+			{
+				enrollment_status_rejected:true
+			},
+			this.returnFields,
+			[...this.returnFields, 'id'],
+		);
+
+		const newdata = (
+			await this.userById(res?.program_beneficiaries?.user_id)
+		).data;
+
+		const audit = await this.userService.addAuditLog(
+			beneficiaryId,
+			updatedBy,
+			'program_beneficiaries.enrollment_status_rejected',
+			updatedUser?.program_beneficiaries?.id,
+			{
+				// status: updatedUser?.program_beneficiaries?.status,
+				enrollment_status_rejected:
+					updatedUser?.program_beneficiaries
+						?.enrollment_status_rejected,
+			},
+			{
+				// status: newdata?.program_beneficiaries?.status,
+				// reason_for_status_update:
+				// 	newdata?.program_beneficiaries?.reason_for_status_update,
+				"enrollment_status_rejected":newdata.program_beneficiaries.enrollment_status_rejected
+			},
+			['enrollment_status_rejected'],
+		);
+		return {
+			status: 200,
+			success: true,
+			message: 'Status Updated successfully!',
+			data: (await this.userById(res?.program_beneficiaries?.user_id))
+				.data,
+		};
+	}
+
 	public async registerBeneficiary(body, request) {
 		const user = await this.userService.ipUserInfo(request);
 		const password = body.mobile;
