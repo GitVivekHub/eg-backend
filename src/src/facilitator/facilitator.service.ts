@@ -1623,4 +1623,159 @@ export class FacilitatorService {
 			data: userData,
 		};
 	}
+
+	public async getLearnerStatusDistribution(req: any,body:any, resp: any) {
+		
+		const user = await this.userService.ipUserInfo(req);
+		if (!user?.data?.id) {
+			return resp.status(401).json({
+				success: false,
+				message: 'Unauthenticated User!',
+			});
+		}
+
+		const sortType = body?.sortType ? body?.sortType : 'desc';
+		const page = isNaN(body.page) ? 1 : parseInt(body.page);
+		const limit = isNaN(body.limit) ? 15 : parseInt(body.limit);
+		let offset = page > 1 ? limit * (page - 1) : 0;
+		let filterQueryArray = [];
+
+		filterQueryArray.push(`{id: {_is_null: false}}`)
+
+		filterQueryArray.push(`{parent_ip: {_eq: "${user?.data?.program_users[0]?.organisation_id}"}}`)
+
+		if (body.search && body.search !== '') {
+			let first_name = body.search.split(' ')[0];
+			let last_name = body.search.split(' ')[1] || '';
+
+			if (last_name?.length > 0) {
+				filterQueryArray.push(`{_or: [
+				{ user:{ first_name: { _ilike: "%${first_name}%" } } }
+				{user :{ last_name: { _ilike: "%${last_name}%" } } }
+				 ]} `);
+			} else {
+				filterQueryArray.push(`{_or: [
+				{ user: { first_name: { _ilike: "%${first_name}%" } } }
+				 ]} `);
+			}
+		}
+	
+
+		if (body?.district && body?.district.length > 0) {
+			filterQueryArray.push(
+				`{user:{district:{_in: ${JSON.stringify(body?.district)}}}}`,
+			);
+		}
+
+		if (body?.block && body?.block.length > 0) {
+			filterQueryArray.push(
+				`{user:{block:{_in: ${JSON.stringify(body?.block)}}}}`,
+			);
+		}
+
+		if (body.facilitator && body.facilitator.length > 0) {
+			filterQueryArray.push(
+				`{beneficiaries: {facilitator_id:{_in: ${JSON.stringify(
+					body.facilitator,
+				)}}}}`,
+			);
+		}
+
+      
+		const status = (
+			await this.enumService.getEnumValue('BENEFICIARY_STATUS')
+		).data.map((item) => item.value);
+
+		let filterQuery = '{ _and: [' + filterQueryArray.join(',') + '] }';
+
+		let variables = {
+		limit: limit,
+		offset: offset
+		}
+		
+	let qury = `query MyQuery($limit:Int, $offset:Int) {
+		program_faciltators(limit: $limit,
+			offset: $offset,where: ${filterQuery}) {
+		  user {
+			first_name
+			last_name
+			middle_name
+			id
+		  }
+		  learner_total_count:beneficiaries_aggregate {
+			aggregate {
+			  count
+			}
+		  },
+		  identified:beneficiaries_aggregate(
+			where: {
+				user: {id: {_is_null: false}},
+				_or: [
+					{status: {_nin: ${JSON.stringify(status.filter((item) => item != 'identified'))}}},
+					{ status: { _is_null: true } }
+			 ]
+			}
+		)
+		{
+        aggregate {
+          count
+        }
+	}
+		  ${status.filter((item) => item != 'identified')
+		  .map(
+			(item) => `${
+				!isNaN(Number(item[0])) ? '_' + item : item
+			}:beneficiaries_aggregate(where: {
+            _and: [
+              {
+              status: {_eq: "${item}"}
+            },
+				{ user:	{ id: { _is_null: false } } }
+			
+                                     ]
+        }) {
+        aggregate {
+          count
+        }
+      }`,
+	 
+		)}
+		
+		  
+		}
+	  }
+	  `
+		const data = { query: qury,variables: variables};
+		const response = await this.hasuraServiceFromServices.getData(data);
+		const newQdata = response?.data;
+			const res = newQdata.program_faciltators.map(facilitator => {
+			const statusCount = status.map(statusKey => ({
+			  status: statusKey,
+			  count: facilitator[statusKey]?.aggregate?.count || 0, // Use conditional chaining and provide default value
+			}));
+		  
+			return {
+			  first_name: facilitator.user.first_name,
+			  last_name: facilitator.user.last_name,
+			  id:facilitator.user.id,
+			  learner_total_count: facilitator.learner_total_count.aggregate.count,
+			  status_count: statusCount,
+			};
+		  });
+		  
+		  let responseWithPagination = res.slice(offset, offset + limit);
+		  const count = res.length;
+		  const totalPages = Math.ceil(count / limit);
+			  
+		return resp.status(200).json({
+			success: true,
+			message: 'Data found successfully!',
+			data: {
+				data: responseWithPagination,
+				totalCount : count,
+				totalPages:totalPages
+
+			},
+		});
+	}
 }

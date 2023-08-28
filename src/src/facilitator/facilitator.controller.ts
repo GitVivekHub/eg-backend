@@ -95,6 +95,17 @@ export class FacilitatorController {
 		return this.facilitatorService.getFacilitators(req, body, response);
 	}
 
+	@Post('/admin/learner-status-distribution')
+	@UsePipes(ValidationPipe)
+	async getLearnerStatusDistribution(
+		@Req() req: any,
+		@Body() body: FilterFacilitatorDto,
+		@Res() response: any,
+	) {
+		return this.facilitatorService.getLearnerStatusDistribution(req, body, response);
+	}
+
+
 	@Post('/exportCsv')
 	@UseGuards(new AuthGuard())
 	@UsePipes(ValidationPipe)
