@@ -505,4 +505,53 @@ export class GeolocationService {
 			});
 		}
 	}
+
+	public async getStateLists(resp: any) {
+		try {
+			const states_of_india = [
+				'ANDHRA PRADESH',
+				'ARUNACHAL PRADESH',
+				'ASSAM',
+				'BIHAR',
+				'CHHATTISGARH',
+				'GOA',
+				'GUJARAT',
+				'HARYANA',
+				'HIMACHAL PRADESH',
+				'JHARKHAND',
+				'KARNATAKA',
+				'KERALA',
+				'MADHYA PRADESH',
+				'MAHARASHTRA',
+				'MANIPUR',
+				'MEGHALAYA',
+				'MIZORAM',
+				'NAGALAND',
+				'ODISHA',
+				'PUNJAB',
+				'RAJASTHAN',
+				'SIKKIM',
+				'TAMIL NADU',
+				'TELANGANA',
+				'TRIPURA',
+				'UTTAR PRADESH',
+				'UTTARAKHAND',
+				'WEST BENGAL',
+			];
+			// Return the list of states as a response
+			return resp.status(200).send({
+				success: true,
+				message: 'List of Indian states',
+				data: states_of_india,
+			});
+		} catch (error) {
+			// Log error and return a generic error response
+			console.error('Error fetching List:', error);
+			return resp.status(422).send({
+				success: false,
+				message: 'An error occurred while fetching List data',
+				data: {},
+			});
+		}
+	}
 }

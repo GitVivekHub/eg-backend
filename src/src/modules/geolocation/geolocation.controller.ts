@@ -186,4 +186,10 @@ export class GeolocationController {
 			response,
 		);
 	}
+
+	@Get('/state_lists')
+	@UsePipes(ValidationPipe)
+	getStateLists(@Res() response: Response) {
+		return this.geolocationService.getStateLists(response);
+	}
 }

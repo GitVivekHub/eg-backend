@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { HasuraService } from '../hasura/hasura.service';
 import { HasuraService as HasuraServiceFromServices } from '../services/hasura/hasura.service';
-
+import { UploadFileService } from 'src/upload-file/upload-file.service';
 @Injectable()
 export class VolunteerService {
 	constructor(
 		private hasuraService: HasuraService,
 		private hasuraServiceFromServices: HasuraServiceFromServices,
+		private uploadFileService: UploadFileService,
 	) {}
 
 	public async getvolunteerList(body: any, request: any, response: any) {
@@ -173,6 +174,14 @@ export class VolunteerService {
             dob
             state
 						username
+						profile_photo_1: documents(where: {document_sub_type: {_eq: "profile_photo_1"}}) {
+							id
+			name
+			doument_type
+			document_sub_type
+			path
+		  
+						}
             qualifications {
               id
               qualification_master_id
@@ -194,8 +203,28 @@ export class VolunteerService {
 
 			const response = await this.hasuraServiceFromServices.getData(data);
 
-			const volunteer = response?.data?.users || [];
+			let volunteer = response?.data?.users || [];
 
+			volunteer = await Promise.all(
+				volunteer?.map(async (obj) => {
+					let mappedData = {
+						...obj,
+						['profile_photo_1']:
+							obj?.['profile_photo_1']?.[0] || {},
+					};
+					if (mappedData?.profile_photo_1?.id) {
+						const { success, data: fileData } =
+							await this.uploadFileService.getDocumentById(
+								mappedData?.profile_photo_1?.id,
+							);
+						if (success && fileData?.fileUrl) {
+							mappedData.profile_photo_1.fileUrl =
+								fileData.fileUrl;
+						}
+					}
+					return mappedData;
+				}),
+			);
 			if (volunteer.length === 0) {
 				return resp.status(404).send({
 					success: false,
@@ -242,6 +271,7 @@ export class VolunteerService {
 
 			const usersFields = [
 				'first_name',
+				'middle_name',
 				'last_name',
 				'gender',
 				'mobile',
@@ -305,6 +335,7 @@ export class VolunteerService {
 					[
 						'id',
 						'first_name',
+						'middle_name',
 						'last_name',
 						'gender',
 						'mobile',

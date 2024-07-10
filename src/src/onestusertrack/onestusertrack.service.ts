@@ -43,7 +43,11 @@ export class OnestusertrackService {
 			});
 		}
 
-		if (context == 'jobs' || context == 'scholarship') {
+		if (
+			context == 'jobs' ||
+			context == 'scholarship' ||
+			context == 'learning'
+		) {
 			let checkcontext = {
 				query: `query MyQuery {
       onest_users_tracking_aggregate(where: {user_id: {_eq: ${user_id}}, context_item_id: {_eq: "${context_item_id}"}, context: {_eq: "${context}"}}){
@@ -144,5 +148,58 @@ export class OnestusertrackService {
 			success: true,
 			message: 'Onest User Tracking data List Found Successfully',
 		});
+	}
+
+	async update(id: any, body: any, request: any, resp: any) {
+		try {
+			const status = body?.status;
+			// Check if id:organisation is a valid ID
+			if (!id || isNaN(id) || id === 'string' || id <= 0) {
+				return resp.status(422).send({
+					success: false,
+					message:
+						'Invalid Onest track ID. Please provide a valid ID.',
+					data: {},
+				});
+			}
+
+			const onestUpdateFields = ['status'];
+			let onest_track;
+			// 			if (body?.status) {
+			// 				const { status } = body.status;
+			// console.log("sss",body?.status);
+
+			// Check if all fields are present
+			if (!status) {
+				return resp.status(422).send({
+					success: false,
+					message: 'status are required.',
+					data: {},
+				});
+			}
+
+			onest_track = await this.hasuraService.q(
+				'onest_users_tracking',
+				{ ...body, id },
+				onestUpdateFields,
+				true,
+				['id', 'status'],
+			);
+			console.log('sss', onest_track);
+
+			// }
+
+			return resp.status(200).json({
+				success: true,
+				message: 'Updated successfully!',
+				data: onest_track,
+			});
+		} catch (error) {
+			return resp.status(422).json({
+				success: false,
+				message: "Couldn't update the organisation.",
+				data: {},
+			});
+		}
 	}
 }

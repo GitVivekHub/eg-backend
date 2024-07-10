@@ -71,6 +71,21 @@ export class AuthController {
 		return this.authService.resetPasswordUsingId(req, header, response);
 	}
 
+	@Post('/reset-password-volunteer-admin')
+	@UseGuards(new AuthGuard())
+	@UsePipes(ValidationPipe)
+	public resetPasswordUsingIdVolunteer(
+		@Body() req: ResetPasswordAdminDTO,
+		@Req() header: Request,
+		@Res() response: Response,
+	) {
+		return this.authService.resetPasswordUsingIdVolunteer(
+			req,
+			header,
+			response,
+		);
+	}
+
 	@Post('/login')
 	@UsePipes(ValidationPipe)
 	login(@Req() req: Request, @Res() response: Response) {

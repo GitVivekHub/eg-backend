@@ -42,4 +42,15 @@ export class OnestusertrackController {
 			response,
 		);
 	}
+
+	@Patch('/:id')
+	@UseGuards(new AuthGuard())
+	update(
+		@Req() request: any,
+		@Body() body: any,
+		@Param('id') id: number,
+		@Res() response: any,
+	) {
+		return this.onestusertrackService.update(id, body, request, response);
+	}
 }

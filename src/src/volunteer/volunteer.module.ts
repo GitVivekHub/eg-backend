@@ -10,8 +10,9 @@ import { HasuraModule as HasuraModuleFromServices } from '../services/hasura/has
 import { HasuraModule } from '../hasura/hasura.module';
 import { CohortMiddleware } from 'src/common/middlewares/cohort.middleware';
 import { Method } from 'src/common/method/method';
+import { UploadFileModule } from 'src/upload-file/upload-file.module';
 @Module({
-	imports: [HasuraModuleFromServices, HasuraModule],
+	imports: [HasuraModuleFromServices, HasuraModule, UploadFileModule],
 	controllers: [VolunteerController],
 	providers: [VolunteerService, Method],
 })
