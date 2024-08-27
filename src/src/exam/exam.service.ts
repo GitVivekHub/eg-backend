@@ -1385,7 +1385,7 @@ export class ExamService {
 
 		if (validation_result == null || validation_result === '') {
 			// If no status is present, start with the first attempt status
-			result_upload_status = attempt_status[0];
+			return (result_upload_status = attempt_status[0]);
 		} else {
 			const currentIndex = attempt_status.indexOf(validation_result);
 			if (
